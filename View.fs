@@ -29,6 +29,8 @@ let th x = tag "th" [] (flatten x)
 let tr x = tag "tr" [] (flatten x)
 let td x = tag "td" [] (flatten x)
 
+let for' = "data-uia-for"
+
 let formatDec (d : Decimal) = d.ToString(Globalization.CultureInfo.InvariantCulture)
 
 let truncate k (s : string) =
@@ -115,7 +117,7 @@ let details (album : Db_Postgres.AlbumDetails) = [
         for (caption,t) in ["Genre:",album.Genre;"Artist:",album.Artist;"Price:",formatDec album.Price] ->
             p [
                 em caption
-                text t
+                spanAttr [for', caption] (text t)
             ]
         yield pAttr ["class", "button"] [
             aHref (sprintf Path.Cart.addAlbum album.AlbumId) (text "Add to cart")
@@ -288,22 +290,24 @@ let nonEmptyCart (carts : Db_Postgres.CartDetails list) = [
         for cart in carts ->
             tr [
                 td [
-                    aHref (sprintf Path.Store.details cart.AlbumId) (text cart.AlbumTitle)
+                    aHrefAttr (sprintf Path.Store.details cart.AlbumId) [for', "Album Name"] (text cart.AlbumTitle)
                 ]
                 td [
-                    text (formatDec cart.Price)
+                    spanAttr [for', "Price"] (text (formatDec cart.Price))
                 ]
                 td [
-                    text (cart.Count.ToString())
+                    spanAttr [for', "Count"] (text (cart.Count.ToString()))
                 ]
                 td [
                     aHrefAttr "#" ["class", "removeFromCart"; "data-id", cart.AlbumId.ToString()] (text "Remove from cart")
                 ]
             ]
         yield tr [
-            for d in ["Total"; ""; ""; carts |> List.sumBy (fun c -> c.Price * (decimal c.Count)) |> formatDec] ->
-            td [text d]
-        ]
+                  td [ text "Total" ]
+                  td [ text "" ]
+                  td [ text "" ]
+                  td [ spanAttr [for', "Total"] (text (formatDec (carts |> List.sumBy (fun c -> c.Price * (decimal c.Count))))) ]
+              ]
     ]
     scriptAttr [ "type", "text/javascript"; " src", "/jquery-1.11.3.min.js" ] [ text "" ]
     scriptAttr [ "type", "text/javascript"; " src", "/script.js" ] [ text "" ]
